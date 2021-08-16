@@ -1,0 +1,20 @@
+{
+  "name": "@imooc-night-dev/utils",
+  "version": "1.0.0",
+  "description": "> TODO: description",
+  "author": "tony",
+  "homepage": "",
+  "license": "ISC",
+  "main": "lib/index.js",
+  "directories": {
+    "lib": "lib",
+    "test": "__tests__"
+  },
+  "files": [
+    "lib"
+  ],
+  "scripts": {
+    "test": "echo \"run tests from utils\" "
+  },
+  "dependencies": {}
+}
