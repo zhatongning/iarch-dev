@@ -1,6 +1,6 @@
 {
   "name": "@imooc-night-dev/core",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "core",
   "author": "tony",
   "homepage": "",
@@ -15,6 +15,5 @@
   ],
   "scripts": {
     "test": "echo \" run tests from core\" "
-  },
-  "dependencies": {}
+  }
 }
