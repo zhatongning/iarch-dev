@@ -1,0 +1,34 @@
+{
+  "name": "@imooc-night-dev/command",
+  "version": "1.0.0",
+  "description": "the base class of command",
+  "keywords": [
+    "class",
+    "command"
+  ],
+  "author": "tony <zhatn98@gmail.com>",
+  "homepage": "https://github.com/zhatongning/iarch-dev#readme",
+  "license": "ISC",
+  "main": "lib/index.js",
+  "directories": {
+    "lib": "lib",
+    "test": "__tests__"
+  },
+  "files": [
+    "lib"
+  ],
+  "publishConfig": {
+    "registry": "https://registry.npm.taobao.org/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zhatongning/iarch-dev.git"
+  },
+  "scripts": {
+    "test": "echo \"Error: run tests from root\" && exit 1"
+  },
+  "bugs": {
+    "url": "https://github.com/zhatongning/iarch-dev/issues"
+  },
+  "dependencies": {}
+}

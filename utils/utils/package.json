@@ -1,9 +1,9 @@
 {
   "name": "@imooc-night-dev/utils",
-  "version": "1.0.3",
+  "version": "1.0.0",
   "description": "> TODO: description",
   "author": "tony",
-  "homepage": "",
+  "homepage": "https://github.com/zhatongning/iarch-dev#readme",
   "license": "ISC",
   "main": "lib/index.js",
   "directories": {
@@ -16,8 +16,17 @@
   "scripts": {
     "test": "echo \"run tests from utils\" "
   },
-  "gitHead": "6ef5fc2c979a9471dbd07c7c4511d6ee7917ee20",
   "publishConfig": {
     "access": "public"
+  },
+  "keywords": [
+    "utils"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zhatongning/iarch-dev.git"
+  },
+  "bugs": {
+    "url": "https://github.com/zhatongning/iarch-dev/issues"
   }
 }
