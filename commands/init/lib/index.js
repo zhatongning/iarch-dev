@@ -1,6 +1,7 @@
 'use strict'
 const fs = require('fs')
 const os = require('os')
+const path = require('path')
 const Command = require('@imooc-night-dev/command')
 const log = require('@imooc-night-dev/log')
 const inquirer = require('inquirer')
@@ -8,10 +9,19 @@ const fse = require('fs-extra')
 const Package = require('@imooc-night-dev/package')
 const getTemplate = require('./get-template')
 const ora = require('ora')
+const semver = require('semver')
+const glob = require('glob')
+const ejs = require('ejs')
+const kebabCase = require('lodash.kebabcase')
 
 const TEMPLATE = {
   project: 'project',
   component: 'component'
+}
+
+const TEMPLATE_TYPE = {
+  normal: 'normal',
+  custom: 'custom'
 }
 
 class InitCommand extends Command {
@@ -27,17 +37,24 @@ class InitCommand extends Command {
   async exec () {
     // 1.准备阶段，收集创建的信息
     const projectInfo = await this.prepare()
+
+    if (!projectInfo) return
+
     this.projectInfo = projectInfo
 
-    log.verbose('projectInfo', projectInfo, this.templates)
-    // 2.下载模板
+    log.verbose('projectInfo', projectInfo)
 
+    // 2.下载模板
     await this.downloadTemplate()
+
+    // 3.将模板复制到当前目录下
+    await this.copyTemplate()
   }
 
   async downloadTemplate () {
     const { template } = this.projectInfo
     const seletedTemp = this.templates.find(t => t.packageName === template)
+    this.currentTemplate = seletedTemp
     log.verbose('selected-template', seletedTemp)
     const targetPath = path.resolve(
       os.homedir,
@@ -45,6 +62,7 @@ class InitCommand extends Command {
       'templates'
     )
     const storePath = path.resolve(targetPath, 'node_modules')
+
     log.verbose(
       seletedTemp.packageName,
       seletedTemp.version,
@@ -58,6 +76,10 @@ class InitCommand extends Command {
       pkgVersion: seletedTemp.version,
       silence: true
     })
+    this.storeModulePath = path.resolve(
+      storePath,
+      await pkg.getCacheModuleName()
+    )
     const isExisted = await pkg.exist()
     if (isExisted) {
       const spinner = ora(`${seletedTemp.packageName} is updating`).start()
@@ -74,12 +96,15 @@ class InitCommand extends Command {
 
   async prepare () {
     try {
-      const temps = (this.templates = await getTemplate())
+      const temps = await getTemplate()
+      log.verbose('模板数据', temps)
       if (!temps || (temps && temps.length === 0)) {
         return log.error('没有模板可以使用')
       }
+      this.templates = temps
     } catch (e) {
-      log.error(e.message)
+      log.error('获取模板失败')
+      return
     }
 
     const cwd = process.cwd()
@@ -127,7 +152,7 @@ class InitCommand extends Command {
     return !fileList || fileList.length === 0
   }
 
-  getTemplates () {
+  getProjectTemplates () {
     if (!Array.isArray(this.templates)) {
       return []
     }
@@ -135,6 +160,11 @@ class InitCommand extends Command {
       name: item.name,
       value: item.packageName
     }))
+  }
+
+  _isValidProjectName (name) {
+    const reg = /^[a-zA-Z][\w_]*[a-zA-Z0-9]$/
+    return reg.test(name)
   }
 
   async getProjectInfo () {
@@ -159,25 +189,33 @@ class InitCommand extends Command {
     ])
 
     if (projectType === TEMPLATE.project) {
-      projectInfo = await inquirer.prompt([
-        {
+      const promptOptions = []
+      if (this._projectName && this._isValidProjectName(this._projectName)) {
+        projectInfo = {
+          projectName: kebabCase(this._projectName)
+        }
+      } else {
+        promptOptions.push({
           type: 'input',
           name: 'projectName',
           message: 'input a project name:',
-          validate (v) {
-            return !!v
+          validate: v => {
+            return this._isValidProjectName(v)
           },
           filter (v) {
-            return v
+            return kebabCase(v)
           }
-        },
+        })
+      }
+      promptOptions.push(
         {
           type: 'input',
           default: '1.0.0',
           name: 'projectVersion',
           message: 'input a project version:',
           validate (v) {
-            return !!v
+            // 正则 /^v|^[0-9]+.[0-9]+.[0-9]+/
+            return !!semver.valid(v)
           },
           filter (v) {
             return v
@@ -187,12 +225,72 @@ class InitCommand extends Command {
           type: 'list',
           name: 'template',
           message: 'select a template to init',
-          choices: this.getTemplates()
+          choices: this.getProjectTemplates()
         }
-      ])
+      )
+      projectInfo = {
+        ...projectInfo,
+        ...(await inquirer.prompt(promptOptions))
+      }
     }
 
     return projectInfo
+  }
+
+  copyTemplate () {
+    if (this.currentTemplate.type) {
+      if (this.currentTemplate.type === TEMPLATE_TYPE.normal) {
+        this.copyNormolTemplate()
+      } else if (this.currentTemplate.type === TEMPLATE_TYPE.custom) {
+        this.copyCustomTemplate()
+      } else {
+        log.error('模板类型错误')
+        return
+      }
+    } else {
+      this.copyNormolTemplate()
+    }
+  }
+
+  async copyNormolTemplate () {
+    const sourcePath = path.resolve(this.storeModulePath, 'template')
+    const target = process.cwd()
+    fse.ensureDirSync(sourcePath)
+    fse.ensureDirSync(target)
+    fse.copySync(sourcePath, target)
+    log.success('🚀 模板已下载成功')
+    this.renderTemplate()
+  }
+
+  renderTemplate () {
+    glob(
+      '**/*',
+      {
+        ignore: ['node_modules', 'public/index.html'],
+        nodir: true,
+        cwd: process.cwd()
+      },
+      (err, files) => {
+        if (err) return
+        files.forEach(async file => {
+          const filePath = path.resolve(process.cwd(), file)
+          const replaceTemplateString = await ejs.renderFile(
+            filePath,
+            {
+              projectName: this.projectInfo.projectName,
+              version: this.projectInfo.projectVersion
+            },
+            {}
+          )
+          fse.writeFileSync(filePath, replaceTemplateString, {})
+        })
+        // console.log(files)
+      }
+    )
+  }
+
+  async copyCustomTemplate () {
+    //
   }
 }
 

@@ -33,6 +33,11 @@ class Package {
     }
   }
 
+  async getCacheModuleName () {
+    await this.prepare()
+    return this.getCacheModuleNameByVersion(this.pkgVersion)
+  }
+
   getCacheModuleNameByVersion (version) {
     return `_${this.pkgNameNoSlash}@${version}@${this.pkgPrefixName}`
   }

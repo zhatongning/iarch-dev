@@ -31,8 +31,12 @@
     "@imooc-night-dev/log": "file:../../utils/log",
     "@imooc-night-dev/package": "file:../../models/package",
     "@imooc-night-dev/request": "file:../../utils/request",
+    "ejs": "^3.1.6",
     "fs-extra": "^10.0.0",
+    "glob": "^7.1.7",
     "inquirer": "^8.1.2",
-    "ora": "5.4.1"
+    "lodash.kebabcase": "^4.1.1",
+    "ora": "5.4.1",
+    "semver": "^7.3.5"
   }
 }
